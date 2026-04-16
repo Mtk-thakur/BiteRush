@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="FoodOrderApp">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BiteRush – Food Ordering System</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.8.3/angular.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.8.3/angular-route.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg: #0d0d0d;
+      --surface: #161616;
+      --surface2: #1e1e1e;
+      --border: #2a2a2a;
+      --accent: #ff6b35;
+      --accent2: #ffd166;
+      --text: #f5f5f0;
+      --muted: #888;
+      --success: #06d6a0;
+      --danger: #ef476f;
+      --radius: 14px;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { background:var(--bg); color:var(--text); font-family:'DM Sans', sans-serif; min-height:100vh; }
+
+    /* ── NAV ── */
+    nav {
+      background:rgba(13,13,13,0.95);
+      backdrop-filter:blur(12px);
+      border-bottom:1px solid var(--border);
+      padding:0 32px;
+      display:flex; align-items:center; justify-content:space-between;
+      height:64px; position:sticky; top:0; z-index:100;
+    }
+    .logo { font-family:'Playfair Display', serif; font-size:26px; color:var(--accent); letter-spacing:-0.5px; }
+    .logo span { color:var(--accent2); }
+    .nav-links { display:flex; gap:8px; }
+    .nav-links a {
+      color:var(--muted); text-decoration:none; padding:8px 16px; border-radius:8px;
+      font-size:14px; font-weight:500; cursor:pointer; transition:all .2s;
+    }
+    .nav-links a:hover, .nav-links a.active { color:var(--text); background:var(--surface2); }
+    .nav-right { display:flex; align-items:center; gap:12px; }
+    .cart-btn {
+      background:var(--accent); color:#fff; border:none; padding:10px 20px;
+      border-radius:10px; font-family:'DM Sans',sans-serif; font-size:14px; font-weight:600;
+      cursor:pointer; display:flex; align-items:center; gap:8px; transition:all .2s;
+    }
+    .cart-btn:hover { background:#e55a2b; transform:translateY(-1px); }
+    .cart-badge {
+      background:#fff; color:var(--accent); border-radius:50%; width:20px; height:20px;
+      font-size:11px; display:flex; align-items:center; justify-content:center; font-weight:700;
+    }
+    .user-chip {
+      background:var(--surface2); border:1px solid var(--border); border-radius:8px;
+      padding:8px 14px; font-size:13px; color:var(--muted);
+    }
+
+    /* ── VIEWS ── */
+    .view { max-width:1200px; margin:0 auto; padding:40px 24px; }
+
+    /* ── HERO ── */
+    .hero {
+      background: linear-gradient(135deg, #1a0a00 0%, #0d0d0d 50%, #0a1a0a 100%);
+      border:1px solid var(--border); border-radius:20px;
+      padding:72px 64px; margin-bottom:48px; position:relative; overflow:hidden;
+    }
+    .hero::before {
+      content:''; position:absolute; top:-60px; right:-60px; width:300px; height:300px;
+      background:radial-gradient(circle, rgba(255,107,53,.25) 0%, transparent 70%);
+    }
+    .hero::after {
+      content:''; position:absolute; bottom:-40px; left:200px; width:200px; height:200px;
+      background:radial-gradient(circle, rgba(255,209,102,.1) 0%, transparent 70%);
+    }
+    .hero-badge { display:inline-block; background:rgba(255,107,53,.15); border:1px solid rgba(255,107,53,.3); color:var(--accent); border-radius:50px; padding:6px 16px; font-size:12px; font-weight:600; letter-spacing:.5px; margin-bottom:20px; text-transform:uppercase; }
+    .hero h1 { font-family:'Playfair Display',serif; font-size:clamp(36px,5vw,64px); line-height:1.1; margin-bottom:16px; }
+    .hero h1 em { color:var(--accent); font-style:normal; }
+    .hero p { color:var(--muted); font-size:17px; line-height:1.6; max-width:520px; margin-bottom:32px; }
+    .hero-actions { display:flex; gap:12px; flex-wrap:wrap; }
+    .btn-primary { background:var(--accent); color:#fff; border:none; padding:14px 28px; border-radius:12px; font-family:'DM Sans',sans-serif; font-size:15px; font-weight:600; cursor:pointer; transition:all .2s; }
+    .btn-primary:hover { background:#e55a2b; transform:translateY(-2px); box-shadow:0 8px 24px rgba(255,107,53,.3); }
+    .btn-outline { background:transparent; color:var(--text); border:1px solid var(--border); padding:14px 28px; border-radius:12px; font-family:'DM Sans',sans-serif; font-size:15px; font-weight:500; cursor:pointer; transition:all .2s; }
+    .btn-outline:hover { border-color:var(--accent); color:var(--accent); }
+    .hero-stats { display:flex; gap:40px; margin-top:40px; padding-top:40px; border-top:1px solid var(--border); }
+    .stat-num { font-family:'Playfair Display',serif; font-size:32px; color:var(--accent2); }
+    .stat-label { color:var(--muted); font-size:13px; margin-top:2px; }
+
+    /* ── SECTION TITLES ── */
+    .section-header { display:flex; align-items:baseline; justify-content:space-between; margin-bottom:24px; }
+    .section-title { font-family:'Playfair Display',serif; font-size:28px; }
+    .section-title span { color:var(--accent); }
+    .see-all { color:var(--accent); font-size:13px; font-weight:500; cursor:pointer; text-decoration:none; }
+
+    /* ── CATEGORY FILTER ── */
+    .categories { display:flex; gap:10px; margin-bottom:32px; flex-wrap:wrap; }
+    .cat-chip {
+      padding:9px 20px; border-radius:50px; border:1px solid var(--border);
+      background:var(--surface); color:var(--muted); font-size:13px; font-weight:500;
+      cursor:pointer; transition:all .2s;
+    }
+    .cat-chip:hover, .cat-chip.active { background:var(--accent); border-color:var(--accent); color:#fff; }
+
+    /* ── SEARCH ── */
+    .search-bar {
+      display:flex; gap:12px; margin-bottom:32px;
+    }
+    .search-input {
+      flex:1; background:var(--surface); border:1px solid var(--border); border-radius:12px;
+      padding:14px 20px; color:var(--text); font-family:'DM Sans',sans-serif; font-size:15px;
+      outline:none; transition:border .2s;
+    }
+    .search-input:focus { border-color:var(--accent); }
+    .search-input::placeholder { color:var(--muted); }
+
+    /* ── MENU GRID ── */
+    .menu-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:20px; }
+    .food-card {
+      background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+      overflow:hidden; transition:all .25s; position:relative;
+    }
+    .food-card:hover { transform:translateY(-4px); border-color:rgba(255,107,53,.3); box-shadow:0 12px 40px rgba(0,0,0,.4); }
+    .card-img {
+      height:180px; display:flex; align-items:center; justify-content:center;
+      font-size:72px; position:relative; overflow:hidden;
+    }
+    .card-badge {
+      position:absolute; top:12px; right:12px; background:var(--accent2); color:#0d0d0d;
+      border-radius:6px; padding:4px 10px; font-size:11px; font-weight:700; text-transform:uppercase;
+    }
+    .veg-badge {
+      position:absolute; top:12px; left:12px; width:18px; height:18px;
+      border:2px solid; border-radius:3px; display:flex; align-items:center; justify-content:center;
+    }
+    .veg-badge.veg { border-color:#06d6a0; }
+    .veg-badge.veg::after { content:''; width:8px; height:8px; background:#06d6a0; border-radius:50%; }
+    .veg-badge.nonveg { border-color:#ef476f; }
+    .veg-badge.nonveg::after { content:''; width:8px; height:8px; background:#ef476f; border-radius:50%; }
+    .card-body { padding:16px 18px 18px; }
+    .card-category { font-size:11px; color:var(--accent); font-weight:600; text-transform:uppercase; letter-spacing:.5px; margin-bottom:6px; }
+    .card-name { font-size:16px; font-weight:600; margin-bottom:6px; line-height:1.3; }
+    .card-desc { font-size:13px; color:var(--muted); line-height:1.5; margin-bottom:14px; }
+    .card-footer { display:flex; align-items:center; justify-content:space-between; }
+    .card-price { font-family:'Playfair Display',serif; font-size:22px; color:var(--accent2); }
+    .card-price small { font-family:'DM Sans',sans-serif; font-size:12px; color:var(--muted); }
+    .add-btn {
+      background:var(--accent); color:#fff; border:none; width:36px; height:36px;
+      border-radius:10px; font-size:20px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+      transition:all .2s;
+    }
+    .add-btn:hover { background:#e55a2b; transform:scale(1.08); }
+    .qty-ctrl { display:flex; align-items:center; gap:10px; }
+    .qty-btn {
+      background:var(--surface2); border:1px solid var(--border); color:var(--text);
+      width:32px; height:32px; border-radius:8px; font-size:16px; cursor:pointer;
+      display:flex; align-items:center; justify-content:center; transition:all .2s;
+    }
+    .qty-btn:hover { border-color:var(--accent); color:var(--accent); }
+    .qty-num { font-weight:600; min-width:20px; text-align:center; }
+    .rating { display:flex; align-items:center; gap:4px; font-size:12px; color:var(--accent2); margin-bottom:10px; }
+    .rating span { color:var(--muted); }
+
+    /* ── CART PANEL ── */
+    .cart-overlay {
+      position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:200;
+      display:none; align-items:flex-end; justify-content:flex-end;
+    }
+    .cart-overlay.open { display:flex; }
+    .cart-panel {
+      background:var(--surface); border-left:1px solid var(--border);
+      width:420px; max-width:100vw; height:100vh; overflow-y:auto;
+      display:flex; flex-direction:column; animation:slideIn .25s ease;
+    }
+    @keyframes slideIn { from { transform:translateX(60px); opacity:0; } to { transform:translateX(0); opacity:1; } }
+    .cart-header { padding:24px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+    .cart-header h2 { font-family:'Playfair Display',serif; font-size:22px; }
+    .close-btn { background:var(--surface2); border:1px solid var(--border); color:var(--muted); width:36px; height:36px; border-radius:8px; cursor:pointer; font-size:18px; display:flex; align-items:center; justify-content:center; }
+    .close-btn:hover { color:var(--text); border-color:var(--text); }
+    .cart-items { flex:1; padding:20px 24px; }
+    .empty-cart { text-align:center; padding:60px 0; color:var(--muted); }
+    .empty-cart .empty-icon { font-size:56px; margin-bottom:16px; opacity:.4; }
+    .cart-item { display:flex; gap:14px; padding:16px 0; border-bottom:1px solid var(--border); }
+    .ci-emoji { font-size:36px; width:56px; height:56px; background:var(--surface2); border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .ci-info { flex:1; }
+    .ci-name { font-weight:600; margin-bottom:4px; }
+    .ci-price { color:var(--accent2); font-size:14px; }
+    .ci-controls { display:flex; align-items:center; gap:8px; margin-top:10px; }
+    .ci-qty-btn { background:var(--surface2); border:1px solid var(--border); color:var(--text); width:28px; height:28px; border-radius:6px; font-size:14px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+    .ci-qty-btn:hover { border-color:var(--accent); }
+    .ci-remove { color:var(--danger); background:none; border:none; font-size:12px; cursor:pointer; margin-left:auto; }
+    .cart-footer { padding:24px; border-top:1px solid var(--border); }
+    .cart-summary { margin-bottom:20px; }
+    .summary-row { display:flex; justify-content:space-between; font-size:14px; margin-bottom:10px; color:var(--muted); }
+    .summary-row.total { font-size:18px; font-weight:700; color:var(--text); border-top:1px solid var(--border); padding-top:12px; margin-top:4px; }
+    .checkout-btn { width:100%; background:var(--accent); color:#fff; border:none; padding:16px; border-radius:12px; font-family:'DM Sans',sans-serif; font-size:16px; font-weight:700; cursor:pointer; transition:all .2s; }
+    .checkout-btn:hover { background:#e55a2b; }
+
+    /* ── ORDERS PAGE ── */
+    .orders-grid { display:grid; gap:16px; }
+    .order-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:20px 24px; }
+    .order-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+    .order-id { font-family:'Playfair Display',serif; font-size:18px; }
+    .status-chip { padding:6px 14px; border-radius:50px; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; }
+    .status-pending { background:rgba(255,209,102,.15); color:var(--accent2); }
+    .status-preparing { background:rgba(255,107,53,.15); color:var(--accent); }
+    .status-delivered { background:rgba(6,214,160,.15); color:var(--success); }
+    .status-cancelled { background:rgba(239,71,111,.15); color:var(--danger); }
+    .order-items-list { margin-bottom:14px; }
+    .order-item-row { display:flex; justify-content:space-between; font-size:14px; padding:4px 0; color:var(--muted); }
+    .order-meta { display:flex; gap:24px; font-size:13px; color:var(--muted); padding-top:14px; border-top:1px solid var(--border); }
+    .order-actions { margin-top:14px; display:flex; gap:10px; }
+    .btn-sm { padding:8px 18px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; border:none; font-family:'DM Sans',sans-serif; }
+    .btn-danger { background:rgba(239,71,111,.15); color:var(--danger); border:1px solid rgba(239,71,111,.3); }
+    .btn-success { background:rgba(6,214,160,.15); color:var(--success); border:1px solid rgba(6,214,160,.3); }
+
+    /* ── AUTH PAGE ── */
+    .auth-wrap { max-width:420px; margin:60px auto; }
+    .auth-card { background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:40px; }
+    .auth-card h2 { font-family:'Playfair Display',serif; font-size:28px; margin-bottom:8px; }
+    .auth-card p { color:var(--muted); font-size:14px; margin-bottom:28px; }
+    .form-group { margin-bottom:18px; }
+    .form-group label { display:block; font-size:13px; font-weight:500; margin-bottom:8px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; }
+    .form-group input, .form-group select {
+      width:100%; background:var(--surface2); border:1px solid var(--border); border-radius:10px;
+      padding:13px 16px; color:var(--text); font-family:'DM Sans',sans-serif; font-size:15px; outline:none; transition:border .2s;
+    }
+    .form-group input:focus, .form-group select:focus { border-color:var(--accent); }
+    .form-error { color:var(--danger); font-size:13px; margin-top:6px; }
+    .auth-submit { width:100%; margin-top:8px; }
+    .auth-switch { text-align:center; margin-top:20px; font-size:14px; color:var(--muted); }
+    .auth-switch a { color:var(--accent); cursor:pointer; font-weight:500; }
+
+    /* ── PROFILE PAGE ── */
+    .profile-grid { display:grid; grid-template-columns:1fr 2fr; gap:24px; }
+    .profile-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:28px; }
+    .profile-avatar { width:80px; height:80px; background:var(--accent); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:32px; margin:0 auto 16px; }
+    .profile-name { text-align:center; font-family:'Playfair Display',serif; font-size:22px; margin-bottom:4px; }
+    .profile-email { text-align:center; color:var(--muted); font-size:14px; margin-bottom:24px; }
+    .profile-stats { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .pstat { background:var(--surface2); border-radius:10px; padding:14px; text-align:center; }
+    .pstat-num { font-family:'Playfair Display',serif; font-size:24px; color:var(--accent2); }
+    .pstat-label { font-size:12px; color:var(--muted); margin-top:2px; }
+
+    /* ── ADMIN PANEL ── */
+    .admin-tabs { display:flex; gap:8px; margin-bottom:28px; }
+    .admin-tab { padding:10px 22px; border-radius:8px; border:1px solid var(--border); background:var(--surface); color:var(--muted); font-size:14px; font-weight:500; cursor:pointer; }
+    .admin-tab.active { background:var(--accent); border-color:var(--accent); color:#fff; }
+    .admin-table { width:100%; border-collapse:collapse; }
+    .admin-table th { background:var(--surface2); padding:12px 16px; text-align:left; font-size:12px; text-transform:uppercase; letter-spacing:.5px; color:var(--muted); border-bottom:1px solid var(--border); }
+    .admin-table td { padding:14px 16px; border-bottom:1px solid var(--border); font-size:14px; }
+    .admin-table tr:hover td { background:var(--surface2); }
+    .admin-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:28px; }
+    .astat { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:20px 22px; }
+    .astat-icon { font-size:28px; margin-bottom:10px; }
+    .astat-num { font-family:'Playfair Display',serif; font-size:28px; color:var(--accent2); }
+    .astat-label { font-size:13px; color:var(--muted); margin-top:2px; }
+
+    /* ── TOAST ── */
+    .toast-container { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); z-index:999; display:flex; flex-direction:column; gap:8px; align-items:center; }
+    .toast {
+      background:var(--surface2); border:1px solid var(--border); color:var(--text);
+      padding:12px 24px; border-radius:12px; font-size:14px; font-weight:500;
+      animation:toastIn .3s ease; box-shadow:0 8px 32px rgba(0,0,0,.4);
+      display:flex; align-items:center; gap:10px;
+    }
+    .toast.success { border-color:var(--success); }
+    .toast.error { border-color:var(--danger); }
+    @keyframes toastIn { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+
+    /* ── MISC ── */
+    .page-title { font-family:'Playfair Display',serif; font-size:36px; margin-bottom:8px; }
+    .page-sub { color:var(--muted); margin-bottom:32px; }
+    .divider { border:none; border-top:1px solid var(--border); margin:32px 0; }
+    .no-results { text-align:center; padding:60px; color:var(--muted); font-size:16px; }
+    .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.7); z-index:300; display:flex; align-items:center; justify-content:center; }
+    .modal { background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:36px; width:480px; max-width:95vw; }
+    .modal h2 { font-family:'Playfair Display',serif; font-size:24px; margin-bottom:20px; }
+    .modal-actions { display:flex; gap:12px; margin-top:24px; }
+    .address-input { width:100%; background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:13px 16px; color:var(--text); font-family:'DM Sans',sans-serif; font-size:15px; outline:none; margin-bottom:14px; }
+    .address-input:focus { border-color:var(--accent); }
+    select option { background:var(--surface2); }
+    .tag { display:inline-block; background:var(--surface2); border:1px solid var(--border); border-radius:6px; padding:3px 10px; font-size:12px; color:var(--muted); margin-right:6px; margin-bottom:4px; }
+  </style>
+</head>
+<body ng-controller="AppController">
+
+<!-- NAV -->
+<nav>
+  <div class="logo">Bite<span>Rush</span></div>
+  <div class="nav-links">
+    <a ng-click="showView('home')" ng-class="{active: view==='home'}">🏠 Home</a>
+    <a ng-click="showView('menu')" ng-class="{active: view==='menu'}">🍽️ Menu</a>
+    <a ng-click="showView('orders')" ng-class="{active: view==='orders'}" ng-show="currentUser">📦 Orders</a>
+    <a ng-click="showView('admin')" ng-class="{active: view==='admin'}" ng-show="currentUser && currentUser.role==='admin'">⚙️ Admin</a>
+    <a ng-click="showView('profile')" ng-class="{active: view==='profile'}" ng-show="currentUser">👤 Profile</a>
+    <a ng-click="showView('login')" ng-class="{active: view==='login'}" ng-show="!currentUser">Login</a>
+  </div>
+  <div class="nav-right">
+    <div class="user-chip" ng-show="currentUser">👋 {{currentUser.name}}</div>
+    <button class="cart-btn" ng-click="toggleCart()" ng-show="currentUser">
+      🛒 Cart
+      <div class="cart-badge">{{cartCount()}}</div>
+    </button>
+  </div>
+</nav>
+
+<!-- CART PANEL -->
+<div class="cart-overlay" ng-class="{open: cartOpen}" ng-click="closeCartIfOutside($event)">
+  <div class="cart-panel" id="cartPanel">
+    <div class="cart-header">
+      <h2>Your Cart</h2>
+      <button class="close-btn" ng-click="toggleCart()">✕</button>
+    </div>
+    <div class="cart-items">
+      <div class="empty-cart" ng-show="cart.length===0">
+        <div class="empty-icon">🛒</div>
+        <p>Your cart is empty.<br/>Add some delicious food!</p>
+      </div>
+      <div class="cart-item" ng-repeat="item in cart">
+        <div class="ci-emoji">{{item.emoji}}</div>
+        <div class="ci-info">
+          <div class="ci-name">{{item.name}}</div>
+          <div class="ci-price">₹{{item.price * item.qty}}</div>
+          <div class="ci-controls">
+            <button class="ci-qty-btn" ng-click="updateQty(item,-1)">−</button>
+            <span class="qty-num">{{item.qty}}</span>
+            <button class="ci-qty-btn" ng-click="updateQty(item,1)">+</button>
+            <button class="ci-remove" ng-click="removeFromCart(item)">✕ Remove</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="cart-footer" ng-show="cart.length>0">
+      <div class="cart-summary">
+        <div class="summary-row"><span>Subtotal</span><span>₹{{cartSubtotal()}}</span></div>
+        <div class="summary-row"><span>Delivery Fee</span><span>₹{{cart.length>0?40:0}}</span></div>
+        <div class="summary-row"><span>GST (5%)</span><span>₹{{(cartSubtotal()*0.05).toFixed(0)}}</span></div>
+        <div class="summary-row total"><span>Total</span><span>₹{{cartTotal()}}</span></div>
+      </div>
+      <button class="checkout-btn" ng-click="openCheckout()">Proceed to Checkout →</button>
+    </div>
+  </div>
+</div>
+
+<!-- CHECKOUT MODAL -->
+<div class="modal-overlay" ng-show="checkoutOpen">
+  <div class="modal">
+    <h2>🏠 Delivery Details</h2>
+    <div class="form-group">
+      <label>Full Name</label>
+      <input type="text" ng-model="checkout.name" placeholder="Enter your name"/>
+    </div>
+    <div class="form-group">
+      <label>Phone</label>
+      <input type="text" ng-model="checkout.phone" placeholder="+91 XXXXX XXXXX"/>
+    </div>
+    <div class="form-group">
+      <label>Delivery Address</label>
+      <input type="text" class="address-input" ng-model="checkout.address" placeholder="House no., Street, Area"/>
+    </div>
+    <div class="form-group">
+      <label>Payment Method</label>
+      <select ng-model="checkout.payment">
+        <option value="cod">Cash on Delivery</option>
+        <option value="upi">UPI</option>
+        <option value="card">Credit/Debit Card</option>
+      </select>
+    </div>
+    <div class="form-error" ng-show="checkoutError">{{checkoutError}}</div>
+    <div class="modal-actions">
+      <button class="btn-outline" ng-click="checkoutOpen=false">Cancel</button>
+      <button class="btn-primary" ng-click="placeOrder()">Place Order – ₹{{cartTotal()}}</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div class="toast-container">
+  <div class="toast" ng-class="toast.type" ng-repeat="toast in toasts">
+    {{toast.msg}}
+  </div>
+</div>
+
+<!-- ════════════════ VIEWS ════════════════ -->
+
+<!-- HOME VIEW -->
+<div class="view" ng-show="view==='home'">
+  <div class="hero">
+    <div class="hero-badge">🔥 Fresh & Fast Delivery</div>
+    <h1>Order <em>Delicious</em><br/>Food Online</h1>
+    <p>Explore hundreds of dishes from top restaurants — hot, fresh, and delivered to your doorstep in 30 minutes.</p>
+    <div class="hero-actions">
+      <button class="btn-primary" ng-click="showView('menu')">Browse Menu 🍕</button>
+      <button class="btn-outline" ng-click="showView(currentUser ? 'orders' : 'login')">{{currentUser ? 'My Orders' : 'Sign In'}}</button>
+    </div>
+    <div class="hero-stats">
+      <div><div class="stat-num">{{menuItems.length}}+</div><div class="stat-label">Menu Items</div></div>
+      <div><div class="stat-num">{{orders.length}}+</div><div class="stat-label">Orders Placed</div></div>
+      <div><div class="stat-num">30</div><div class="stat-label">Min Delivery</div></div>
+      <div><div class="stat-num">4.8⭐</div><div class="stat-label">Avg Rating</div></div>
+    </div>
+  </div>
+
+  <!-- Featured Items -->
+  <div class="section-header">
+    <div class="section-title">Featured <span>Dishes</span></div>
+    <a class="see-all" ng-click="showView('menu')">See all →</a>
+  </div>
+  <div class="menu-grid">
+    <div class="food-card" ng-repeat="item in menuItems | limitTo:6">
+      <div class="card-img" style="background:{{item.bgColor}}">
+        <span>{{item.emoji}}</span>
+        <div class="card-badge" ng-show="item.popular">Popular</div>
+        <div class="veg-badge" ng-class="item.veg ? 'veg' : 'nonveg'"></div>
+      </div>
+      <div class="card-body">
+        <div class="card-category">{{item.category}}</div>
+        <div class="card-name">{{item.name}}</div>
+        <div class="rating">★★★★{{item.rating>=4.5?'★':'☆'}} <span>({{item.reviews}})</span></div>
+        <div class="card-desc">{{item.description}}</div>
+        <div class="card-footer">
+          <div class="card-price">₹{{item.price}} <small>/ serving</small></div>
+          <div ng-if="!getCartItem(item)">
+            <button class="add-btn" ng-click="addToCart(item)" title="Add to Cart">+</button>
+          </div>
+          <div class="qty-ctrl" ng-if="getCartItem(item)">
+            <button class="qty-btn" ng-click="updateQty(getCartItem(item),-1)">−</button>
+            <span class="qty-num">{{getCartItem(item).qty}}</span>
+            <button class="qty-btn" ng-click="updateQty(getCartItem(item),1)">+</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MENU VIEW -->
+<div class="view" ng-show="view==='menu'">
+  <div class="page-title">Our <span style="color:var(--accent)">Menu</span></div>
+  <div class="page-sub">Fresh ingredients, bold flavours — pick your favourites</div>
+
+  <div class="search-bar">
+    <input class="search-input" type="text" ng-model="searchQuery" placeholder="🔍  Search dishes, cuisines..."/>
+  </div>
+
+  <div class="categories">
+    <div class="cat-chip" ng-class="{active:activeCategory==='All'}" ng-click="activeCategory='All'">🍽️ All</div>
+    <div class="cat-chip" ng-class="{active:activeCategory===cat}" ng-click="activeCategory=cat" ng-repeat="cat in categories">{{cat}}</div>
+  </div>
+
+  <div class="menu-grid">
+    <div class="food-card" ng-repeat="item in menuItems | filter:menuFilter" ng-show="(menuItems | filter:menuFilter).length > 0">
+      <div class="card-img" style="background:{{item.bgColor}}">
+        <span>{{item.emoji}}</span>
+        <div class="card-badge" ng-show="item.popular">Popular</div>
+        <div class="veg-badge" ng-class="item.veg ? 'veg' : 'nonveg'"></div>
+      </div>
+      <div class="card-body">
+        <div class="card-category">{{item.category}}</div>
+        <div class="card-name">{{item.name}}</div>
+        <div class="rating">★★★★{{item.rating>=4.5?'★':'☆'}} <span>({{item.reviews}})</span></div>
+        <div class="card-desc">{{item.description}}</div>
+        <div class="card-footer">
+          <div class="card-price">₹{{item.price}}</div>
+          <div ng-if="!getCartItem(item)">
+            <button class="add-btn" ng-click="addToCart(item)">+</button>
+          </div>
+          <div class="qty-ctrl" ng-if="getCartItem(item)">
+            <button class="qty-btn" ng-click="updateQty(getCartItem(item),-1)">−</button>
+            <span class="qty-num">{{getCartItem(item).qty}}</span>
+            <button class="qty-btn" ng-click="updateQty(getCartItem(item),1)">+</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="no-results" ng-show="(menuItems | filter:menuFilter).length===0">
+    🔍 No dishes found for "{{searchQuery}}"
+  </div>
+</div>
+
+<!-- ORDERS VIEW -->
+<div class="view" ng-show="view==='orders'">
+  <div class="page-title">My <span style="color:var(--accent)">Orders</span></div>
+  <div class="page-sub">Track and manage your food orders</div>
+
+  <div class="orders-grid" ng-show="userOrders().length > 0">
+    <div class="order-card" ng-repeat="order in userOrders() | orderBy:'-createdAt'">
+      <div class="order-top">
+        <div>
+          <div class="order-id">Order #{{order.id}}</div>
+          <div style="color:var(--muted);font-size:13px;margin-top:4px;">{{order.address}}</div>
+        </div>
+        <div class="status-chip" ng-class="'status-'+order.status">{{order.status}}</div>
+      </div>
+      <div class="order-items-list">
+        <div class="order-item-row" ng-repeat="item in order.items">
+          <span>{{item.emoji}} {{item.name}} × {{item.qty}}</span>
+          <span>₹{{item.price * item.qty}}</span>
+        </div>
+      </div>
+      <div class="order-meta">
+        <span>💰 Total: ₹{{order.total}}</span>
+        <span>💳 {{order.payment | uppercase}}</span>
+        <span>🕒 {{order.createdAt | date:'dd MMM, h:mm a'}}</span>
+      </div>
+      <div class="order-actions">
+        <button class="btn-sm btn-danger" ng-click="cancelOrder(order)" ng-show="order.status==='pending'">Cancel Order</button>
+        <button class="btn-sm btn-success" ng-click="reorder(order)">🔁 Reorder</button>
+        <span class="tag" ng-show="order.status==='preparing'">⏱️ Est. 25 mins</span>
+        <span class="tag" ng-show="order.status==='delivered'">✅ Delivered</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="no-results" ng-show="userOrders().length===0">
+    📦 No orders yet. <a style="color:var(--accent);cursor:pointer" ng-click="showView('menu')">Browse menu →</a>
+  </div>
+</div>
+
+<!-- LOGIN / REGISTER VIEW -->
+<div class="view" ng-show="view==='login'">
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <h2>{{authMode==='login' ? 'Welcome back' : 'Create Account'}}</h2>
+      <p>{{authMode==='login' ? 'Sign in to order delicious food' : 'Join BiteRush and start ordering'}}</p>
+
+      <div ng-show="authMode==='register'">
+        <div class="form-group">
+          <label>Full Name</label>
+          <input type="text" ng-model="authForm.name" placeholder="Your full name"/>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" ng-model="authForm.email" placeholder="you@example.com"/>
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" ng-model="authForm.password" placeholder="••••••••"/>
+      </div>
+      <div class="form-group" ng-show="authMode==='register'">
+        <label>Phone</label>
+        <input type="text" ng-model="authForm.phone" placeholder="+91 XXXXX XXXXX"/>
+      </div>
+      <div class="form-error" ng-show="authError">{{authError}}</div>
+      <button class="btn-primary auth-submit" ng-click="submitAuth()">
+        {{authMode==='login' ? 'Sign In' : 'Create Account'}}
+      </button>
+      <div class="auth-switch">
+        {{authMode==='login' ? "Don't have an account?" : "Already have an account?"}}
+        <a ng-click="toggleAuthMode()">{{authMode==='login' ? 'Register' : 'Sign In'}}</a>
+      </div>
+      <div style="margin-top:20px;padding-top:20px;border-top:1px solid var(--border);font-size:13px;color:var(--muted)">
+        <strong>Demo Accounts:</strong><br/>
+        Admin: admin@biterush.com / admin123<br/>
+        User: user@biterush.com / user123
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PROFILE VIEW -->
+<div class="view" ng-show="view==='profile'" ng-if="currentUser">
+  <div class="page-title">My <span style="color:var(--accent)">Profile</span></div>
+  <div class="page-sub">Manage your account and preferences</div>
+  <div class="profile-grid">
+    <div>
+      <div class="profile-card">
+        <div class="profile-avatar">{{currentUser.name[0]}}</div>
+        <div class="profile-name">{{currentUser.name}}</div>
+        <div class="profile-email">{{currentUser.email}}</div>
+        <div class="profile-stats">
+          <div class="pstat"><div class="pstat-num">{{userOrders().length}}</div><div class="pstat-label">Orders</div></div>
+          <div class="pstat"><div class="pstat-num">₹{{totalSpent()}}</div><div class="pstat-label">Spent</div></div>
+        </div>
+        <button class="btn-outline" style="width:100%;margin-top:20px" ng-click="logout()">Sign Out</button>
+      </div>
+    </div>
+    <div>
+      <div class="profile-card">
+        <h3 style="font-family:'Playfair Display',serif;font-size:22px;margin-bottom:20px">Update Profile</h3>
+        <div class="form-group">
+          <label>Full Name</label>
+          <input type="text" ng-model="profileEdit.name" placeholder="Full Name"/>
+        </div>
+        <div class="form-group">
+          <label>Phone</label>
+          <input type="text" ng-model="profileEdit.phone" placeholder="Phone"/>
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" ng-model="profileEdit.email" placeholder="Email"/>
+        </div>
+        <button class="btn-primary" ng-click="updateProfile()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN VIEW -->
+<div class="view" ng-show="view==='admin'" ng-if="currentUser && currentUser.role==='admin'">
+  <div class="page-title">Admin <span style="color:var(--accent)">Panel</span></div>
+  <div class="page-sub">Manage menu, orders, and users</div>
+
+  <div class="admin-stats">
+    <div class="astat"><div class="astat-icon">📦</div><div class="astat-num">{{orders.length}}</div><div class="astat-label">Total Orders</div></div>
+    <div class="astat"><div class="astat-icon">🍽️</div><div class="astat-num">{{menuItems.length}}</div><div class="astat-label">Menu Items</div></div>
+    <div class="astat"><div class="astat-icon">👥</div><div class="astat-num">{{users.length}}</div><div class="astat-label">Users</div></div>
+    <div class="astat"><div class="astat-icon">💰</div><div class="astat-num">₹{{totalRevenue()}}</div><div class="astat-label">Revenue</div></div>
+  </div>
+
+  <div class="admin-tabs">
+    <div class="admin-tab" ng-class="{active:adminTab==='orders'}" ng-click="adminTab='orders'">All Orders</div>
+    <div class="admin-tab" ng-class="{active:adminTab==='menu'}" ng-click="adminTab='menu'">Menu Items</div>
+    <div class="admin-tab" ng-class="{active:adminTab==='users'}" ng-click="adminTab='users'">Users</div>
+    <div class="admin-tab" ng-class="{active:adminTab==='add'}" ng-click="adminTab='add'">+ Add Item</div>
+  </div>
+
+  <!-- ORDERS TABLE -->
+  <div ng-show="adminTab==='orders'">
+    <table class="admin-table">
+      <thead><tr><th>#</th><th>Customer</th><th>Items</th><th>Total</th><th>Status</th><th>Action</th></tr></thead>
+      <tbody>
+        <tr ng-repeat="o in orders | orderBy:'-createdAt'">
+          <td>#{{o.id}}</td>
+          <td>{{getUserName(o.userId)}}</td>
+          <td>{{o.items.length}} item(s)</td>
+          <td>₹{{o.total}}</td>
+          <td><span class="status-chip" ng-class="'status-'+o.status">{{o.status}}</span></td>
+          <td>
+            <select ng-model="o.status" ng-change="updateOrderStatus(o)" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:4px 8px;color:var(--text);font-size:12px">
+              <option value="pending">Pending</option>
+              <option value="preparing">Preparing</option>
+              <option value="delivered">Delivered</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- MENU TABLE -->
+  <div ng-show="adminTab==='menu'">
+    <table class="admin-table">
+      <thead><tr><th>Item</th><th>Category</th><th>Price</th><th>Type</th><th>Action</th></tr></thead>
+      <tbody>
+        <tr ng-repeat="item in menuItems">
+          <td>{{item.emoji}} {{item.name}}</td>
+          <td>{{item.category}}</td>
+          <td>₹{{item.price}}</td>
+          <td><span ng-class="item.veg ? 'tag' : 'tag'" style="color:{{item.veg?'#06d6a0':'#ef476f'}}">{{item.veg?'VEG':'NON-VEG'}}</span></td>
+          <td><button class="btn-sm btn-danger" ng-click="deleteMenuItem(item)">Delete</button></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- USERS TABLE -->
+  <div ng-show="adminTab==='users'">
+    <table class="admin-table">
+      <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Role</th><th>Orders</th></tr></thead>
+      <tbody>
+        <tr ng-repeat="u in users">
+          <td>{{u.name}}</td>
+          <td>{{u.email}}</td>
+          <td>{{u.phone}}</td>
+          <td><span class="tag">{{u.role}}</span></td>
+          <td>{{orderCountForUser(u.id)}}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ADD MENU ITEM -->
+  <div ng-show="adminTab==='add'">
+    <div class="profile-card" style="max-width:600px">
+      <h3 style="font-family:'Playfair Display',serif;font-size:22px;margin-bottom:24px">Add New Menu Item</h3>
+      <div class="form-group">
+        <label>Item Name</label>
+        <input type="text" ng-model="newItem.name" placeholder="e.g. Paneer Butter Masala"/>
+      </div>
+      <div class="form-group">
+        <label>Category</label>
+        <select ng-model="newItem.category">
+          <option ng-repeat="cat in categories" value="{{cat}}">{{cat}}</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Price (₹)</label>
+        <input type="number" ng-model="newItem.price" placeholder="e.g. 299"/>
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <input type="text" ng-model="newItem.description" placeholder="Brief description of the dish"/>
+      </div>
+      <div class="form-group">
+        <label>Emoji Icon</label>
+        <input type="text" ng-model="newItem.emoji" placeholder="e.g. 🍛"/>
+      </div>
+      <div class="form-group">
+        <label>Type</label>
+        <select ng-model="newItem.veg">
+          <option value="true">Vegetarian</option>
+          <option value="false">Non-Vegetarian</option>
+        </select>
+      </div>
+      <div class="form-error" ng-show="newItemError">{{newItemError}}</div>
+      <button class="btn-primary" ng-click="addMenuItem()">Add to Menu</button>
+    </div>
+  </div>
+</div>
+
+<script>
+angular.module('FoodOrderApp', [])
+.controller('AppController', function($scope, $timeout) {
+
+  // ── STATE ──
+  $scope.view = 'home';
+  $scope.cartOpen = false;
+  $scope.checkoutOpen = false;
+  $scope.authMode = 'login';
+  $scope.adminTab = 'orders';
+  $scope.activeCategory = 'All';
+  $scope.searchQuery = '';
+  $scope.authError = '';
+  $scope.checkoutError = '';
+  $scope.newItemError = '';
+  $scope.toasts = [];
+  $scope.authForm = {};
+  $scope.checkout = { payment: 'cod' };
+  $scope.newItem = { veg: 'true' };
+  $scope.currentUser = null;
+
+  // ── SEED USERS ──
+  $scope.users = [
+    { id: 1, name: 'Admin User', email: 'admin@biterush.com', password: 'admin123', phone: '+91 98765 43210', role: 'admin' },
+    { id: 2, name: 'John Doe', email: 'user@biterush.com', password: 'user123', phone: '+91 87654 32109', role: 'user' }
+  ];
+
+  // ── SEED MENU ──
+  $scope.menuItems = [
+    { id:1, name:'Margherita Pizza', category:'🍕 Pizza', price:299, emoji:'🍕', description:'Classic tomato sauce, fresh mozzarella, and basil on a thin crust.', veg:true, rating:4.7, reviews:842, popular:true, bgColor:'linear-gradient(135deg,#1a0a00,#2a1000)' },
+    { id:2, name:'Butter Chicken', category:'🍛 Curry', price:349, emoji:'🍛', description:'Tender chicken in rich, creamy tomato-butter gravy. Best with naan.', veg:false, rating:4.8, reviews:1203, popular:true, bgColor:'linear-gradient(135deg,#1a0800,#2a1500)' },
+    { id:3, name:'Veg Biryani', category:'🍚 Rice', price:249, emoji:'🫕', description:'Fragrant basmati rice cooked with seasonal vegetables and whole spices.', veg:true, rating:4.5, reviews:567, popular:false, bgColor:'linear-gradient(135deg,#001a0a,#002a10)' },
+    { id:4, name:'Classic Burger', category:'🍔 Burgers', price:199, emoji:'🍔', description:'Juicy patty with lettuce, cheese, pickles, and signature sauce in a brioche bun.', veg:false, rating:4.6, reviews:934, popular:true, bgColor:'linear-gradient(135deg,#0a0f00,#151a00)' },
+    { id:5, name:'Paneer Tikka', category:'🍢 Starters', price:279, emoji:'🧆', description:'Chunks of cottage cheese marinated in spiced yoghurt and char-grilled.', veg:true, rating:4.7, reviews:456, popular:false, bgColor:'linear-gradient(135deg,#1a0010,#2a0020)' },
+    { id:6, name:'Pasta Arrabbiata', category:'🍝 Pasta', price:249, emoji:'🍝', description:'Penne pasta in spicy tomato sauce with garlic and fresh herbs.', veg:true, rating:4.4, reviews:321, popular:false, bgColor:'linear-gradient(135deg,#0d0020,#1a003a)' },
+    { id:7, name:'Chicken Wings', category:'🍢 Starters', price:329, emoji:'🍗', description:'Crispy wings glazed with BBQ sauce, served with ranch dip.', veg:false, rating:4.8, reviews:1089, popular:true, bgColor:'linear-gradient(135deg,#1a0500,#2a0d00)' },
+    { id:8, name:'Masala Dosa', category:'🫓 South Indian', price:149, emoji:'🫓', description:'Crisp rice crepe stuffed with spiced potato filling. Served with sambar.', veg:true, rating:4.6, reviews:678, popular:false, bgColor:'linear-gradient(135deg,#001510,#002a20)' },
+    { id:9, name:'Chocolate Lava Cake', category:'🍰 Desserts', price:179, emoji:'🍰', description:'Warm cake with a gooey molten chocolate centre. Served with ice cream.', veg:true, rating:4.9, reviews:2341, popular:true, bgColor:'linear-gradient(135deg,#0a0005,#150010)' },
+    { id:10, name:'Mango Lassi', category:'🥤 Drinks', price:99, emoji:'🥭', description:'Thick, chilled yoghurt-based drink blended with fresh alphonso mangoes.', veg:true, rating:4.5, reviews:445, popular:false, bgColor:'linear-gradient(135deg,#1a1000,#2a1800)' },
+    { id:11, name:'Chicken Biryani', category:'🍚 Rice', price:349, emoji:'🍚', description:'Aromatic Hyderabadi-style biryani with tender chicken pieces.', veg:false, rating:4.9, reviews:3210, popular:true, bgColor:'linear-gradient(135deg,#0f0a00,#1e1500)' },
+    { id:12, name:'Veggie Wrap', category:'🌯 Wraps', price:169, emoji:'🌯', description:'Grilled veggies, hummus, and feta in a whole wheat tortilla.', veg:true, rating:4.3, reviews:287, popular:false, bgColor:'linear-gradient(135deg,#001a05,#003010)' },
+  ];
+
+  $scope.categories = [...new Set($scope.menuItems.map(i => i.category))];
+
+  // ── SEED ORDERS ──
+  $scope.orders = [
+    { id:'ORD001', userId:2, items:[{name:'Butter Chicken',emoji:'🍛',price:349,qty:1},{name:'Veg Biryani',emoji:'🫕',price:249,qty:2}], total:887, address:'42 MG Road, Surat', payment:'upi', status:'delivered', createdAt: new Date(Date.now()-86400000*2) },
+    { id:'ORD002', userId:2, items:[{name:'Margherita Pizza',emoji:'🍕',price:299,qty:1},{name:'Mango Lassi',emoji:'🥭',price:99,qty:2}], total:537, address:'42 MG Road, Surat', payment:'cod', status:'preparing', createdAt: new Date(Date.now()-3600000) }
+  ];
+
+  $scope.cart = [];
+
+  // ── NAVIGATION ──
+  $scope.showView = function(v) {
+    if ((v==='orders'||v==='profile'||v==='admin') && !$scope.currentUser) { $scope.showView('login'); return; }
+    $scope.view = v;
+    $scope.cartOpen = false;
+  };
+
+  // ── MENU FILTER ──
+  $scope.menuFilter = function(item) {
+    var catOk = $scope.activeCategory==='All' || item.category===$scope.activeCategory;
+    var q = ($scope.searchQuery||'').toLowerCase();
+    var searchOk = !q || item.name.toLowerCase().includes(q) || item.category.toLowerCase().includes(q) || item.description.toLowerCase().includes(q);
+    return catOk && searchOk;
+  };
+
+  // ── CART ──
+  $scope.toggleCart = function() { $scope.cartOpen = !$scope.cartOpen; };
+  $scope.closeCartIfOutside = function(e) { if (e.target.classList.contains('cart-overlay')) $scope.cartOpen = false; };
+  $scope.cartCount = function() { return $scope.cart.reduce(function(s,i){return s+i.qty;},0); };
+  $scope.cartSubtotal = function() { return $scope.cart.reduce(function(s,i){return s+i.price*i.qty;},0); };
+  $scope.cartTotal = function() {
+    var sub = $scope.cartSubtotal();
+    return sub===0 ? 0 : Math.round(sub + 40 + sub*0.05);
+  };
+
+  $scope.getCartItem = function(item) { return $scope.cart.find(function(c){return c.id===item.id;}); };
+
+  $scope.addToCart = function(item) {
+    if (!$scope.currentUser) { $scope.showToast('Please login to add items','error'); $scope.showView('login'); return; }
+    var existing = $scope.getCartItem(item);
+    if (existing) { existing.qty++; }
+    else { $scope.cart.push({ id:item.id, name:item.name, emoji:item.emoji, price:item.price, qty:1 }); }
+    $scope.showToast(item.emoji + ' ' + item.name + ' added to cart!','success');
+  };
+
+  $scope.updateQty = function(item, delta) {
+    item.qty += delta;
+    if (item.qty <= 0) $scope.removeFromCart(item);
+  };
+
+  $scope.removeFromCart = function(item) {
+    $scope.cart = $scope.cart.filter(function(c){return c.id!==item.id;});
+  };
+
+  // ── CHECKOUT ──
+  $scope.openCheckout = function() {
+    if ($scope.currentUser) {
+      $scope.checkout.name = $scope.currentUser.name;
+      $scope.checkout.phone = $scope.currentUser.phone || '';
+    }
+    $scope.checkoutOpen = true;
+    $scope.cartOpen = false;
+  };
+
+  $scope.placeOrder = function() {
+    $scope.checkoutError = '';
+    if (!$scope.checkout.name || !$scope.checkout.address) {
+      $scope.checkoutError = 'Please fill in your name and delivery address.'; return;
+    }
+    var orderId = 'ORD' + String($scope.orders.length + 1).padStart(3,'0');
+    var order = {
+      id: orderId,
+      userId: $scope.currentUser.id,
+      items: angular.copy($scope.cart),
+      total: $scope.cartTotal(),
+      address: $scope.checkout.address,
+      payment: $scope.checkout.payment,
+      status: 'pending',
+      createdAt: new Date()
+    };
+    $scope.orders.push(order);
+    $scope.cart = [];
+    $scope.checkoutOpen = false;
+    $scope.checkout = { payment: 'cod' };
+    $scope.showToast('🎉 Order placed successfully! ' + orderId,'success');
+    $scope.showView('orders');
+  };
+
+  // ── AUTH ──
+  $scope.toggleAuthMode = function() {
+    $scope.authMode = $scope.authMode==='login' ? 'register' : 'login';
+    $scope.authError = '';
+    $scope.authForm = {};
+  };
+
+  $scope.submitAuth = function() {
+    $scope.authError = '';
+    if ($scope.authMode === 'login') {
+      var user = $scope.users.find(function(u){ return u.email===$scope.authForm.email && u.password===$scope.authForm.password; });
+      if (!user) { $scope.authError = 'Invalid email or password.'; return; }
+      $scope.currentUser = user;
+      $scope.profileEdit = { name: user.name, email: user.email, phone: user.phone };
+      $scope.showToast('Welcome back, ' + user.name + '! 👋','success');
+      $scope.showView('home');
+    } else {
+      if (!$scope.authForm.name || !$scope.authForm.email || !$scope.authForm.password) {
+        $scope.authError = 'Please fill in all fields.'; return;
+      }
+      if ($scope.users.find(function(u){return u.email===$scope.authForm.email;})) {
+        $scope.authError = 'Email already registered.'; return;
+      }
+      var newUser = { id: $scope.users.length+1, name:$scope.authForm.name, email:$scope.authForm.email, password:$scope.authForm.password, phone:$scope.authForm.phone||'', role:'user' };
+      $scope.users.push(newUser);
+      $scope.currentUser = newUser;
+      $scope.profileEdit = { name: newUser.name, email: newUser.email, phone: newUser.phone };
+      $scope.showToast('Account created! Welcome to BiteRush 🚀','success');
+      $scope.showView('home');
+    }
+  };
+
+  $scope.logout = function() {
+    $scope.currentUser = null;
+    $scope.cart = [];
+    $scope.showToast('Logged out successfully','success');
+    $scope.showView('home');
+  };
+
+  // ── PROFILE ──
+  $scope.updateProfile = function() {
+    $scope.currentUser.name = $scope.profileEdit.name;
+    $scope.currentUser.email = $scope.profileEdit.email;
+    $scope.currentUser.phone = $scope.profileEdit.phone;
+    $scope.showToast('Profile updated successfully ✅','success');
+  };
+
+  $scope.userOrders = function() {
+    if (!$scope.currentUser) return [];
+    return $scope.orders.filter(function(o){return o.userId===$scope.currentUser.id;});
+  };
+
+  $scope.totalSpent = function() {
+    return $scope.userOrders().reduce(function(s,o){return s+o.total;},0);
+  };
+
+  // ── ORDERS ──
+  $scope.cancelOrder = function(order) {
+    order.status = 'cancelled';
+    $scope.showToast('Order #' + order.id + ' cancelled','error');
+  };
+
+  $scope.reorder = function(order) {
+    if (!$scope.currentUser) return;
+    order.items.forEach(function(item) {
+      var existing = $scope.cart.find(function(c){return c.name===item.name;});
+      if (existing) existing.qty += item.qty;
+      else $scope.cart.push(angular.copy(item));
+    });
+    $scope.showToast('Items added to cart!','success');
+    $scope.cartOpen = true;
+  };
+
+  // ── ADMIN ──
+  $scope.getUserName = function(userId) {
+    var u = $scope.users.find(function(u){return u.id===userId;});
+    return u ? u.name : 'Unknown';
+  };
+
+  $scope.orderCountForUser = function(userId) {
+    return $scope.orders.filter(function(o){return o.userId===userId;}).length;
+  };
+
+  $scope.totalRevenue = function() {
+    return $scope.orders.filter(function(o){return o.status!=='cancelled';}).reduce(function(s,o){return s+o.total;},0);
+  };
+
+  $scope.updateOrderStatus = function(order) {
+    $scope.showToast('Order #' + order.id + ' → ' + order.status,'success');
+  };
+
+  $scope.deleteMenuItem = function(item) {
+    $scope.menuItems = $scope.menuItems.filter(function(m){return m.id!==item.id;});
+    $scope.showToast(item.name + ' removed from menu','error');
+  };
+
+  $scope.addMenuItem = function() {
+    $scope.newItemError = '';
+    if (!$scope.newItem.name || !$scope.newItem.price || !$scope.newItem.category) {
+      $scope.newItemError = 'Please fill in name, category, and price.'; return;
+    }
+    var item = {
+      id: $scope.menuItems.length + 1,
+      name: $scope.newItem.name,
+      category: $scope.newItem.category,
+      price: parseInt($scope.newItem.price),
+      emoji: $scope.newItem.emoji || '🍽️',
+      description: $scope.newItem.description || 'A delicious new dish.',
+      veg: $scope.newItem.veg === 'true',
+      rating: 4.5,
+      reviews: 0,
+      popular: false,
+      bgColor: 'linear-gradient(135deg,#0a0a00,#1a1a00)'
+    };
+    $scope.menuItems.push(item);
+    $scope.newItem = { veg: 'true' };
+    $scope.showToast('Menu item added successfully! 🍽️','success');
+    $scope.adminTab = 'menu';
+  };
+
+  // ── TOAST ──
+  $scope.showToast = function(msg, type) {
+    var t = { msg: msg, type: type||'success' };
+    $scope.toasts.push(t);
+    $timeout(function(){ $scope.toasts = $scope.toasts.filter(function(x){return x!==t;}); }, 3000);
+  };
+
+  // ── REST API SIMULATION (console logs for demo) ──
+  // Simulates HTTP calls that would go to Node.js/Express backend
+  var api = {
+    get: function(endpoint) { console.log('[GET]', endpoint); },
+    post: function(endpoint, data) { console.log('[POST]', endpoint, data); },
+    put: function(endpoint, data) { console.log('[PUT]', endpoint, data); },
+    delete: function(endpoint) { console.log('[DELETE]', endpoint); }
+  };
+
+  // Simulate API calls on actions (demonstrating RESTful design)
+  $scope.$watch('orders.length', function(n, o) { if(n>o) api.post('/api/orders', $scope.orders[$scope.orders.length-1]); });
+  $scope.$watch('menuItems.length', function(n, o) { if(n>o) api.post('/api/menu', $scope.menuItems[$scope.menuItems.length-1]); });
+});
+</script>
+</body>
+</html>
